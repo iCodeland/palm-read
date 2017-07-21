@@ -18,13 +18,13 @@ def rank(value):
 
 @app.route('/', methods=['POST'])
 def palm_read():
-    model = load_model('palm_model.mdl')
+    model = load_model('model.mdl')
     image_url = request.form.get('image')
     img = Image.open(urllib.request.urlopen(image_url))
     X = np.array(
-        img.resize((img_width, img_height)).getdata(),
+        img.resize((IMG_WIDTH, IMG_HEIGHT)).getdata(),
         np.uint8,
-    ).reshape(1, img_width, img_height, 3) / 255
+    ).reshape(1, IMG_WIDTH, IMG_HEIGHT, 3) / 255
     prediction = model.predict(X)[0]
     result = [rank(p) for p in prediction]
     love = result[0]

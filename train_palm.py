@@ -3,7 +3,7 @@ import pandas as pd
 
 from PIL import Image
 
-from sklearn import train_test_split
+from sklearn.model_selection import train_test_split
 
 from keras import applications, optimizers
 from keras.layers import Dropout, Flatten, Dense
@@ -16,7 +16,7 @@ from settings import *
 model = applications.VGG16(
     weights='imagenet',
     include_top=False,
-    input_shape=(img_width, img_height, 3),
+    input_shape=(IMG_WIDTH, IMG_HEIGHT, 3),
 )
 
 # set the first 10 layers to non-trainable
@@ -38,14 +38,8 @@ tuned_model.compile(
 )
 
 # prepare train data augmentation configuration
-rescale = 1. / 255
-test_datagen = ImageDataGenerator(rescale=rescale)
-train_datagen = ImageDataGenerator(
-    rescale=rescale,
-    # shear_range=0.2,
-    # zoom_range=0.2,
-    # horizontal_flip=True,
-)
+train_datagen = ImageDataGenerator(**IMG_AUG)
+test_datagen = ImageDataGenerator(rescale=IMG_AUG['rescale'])
 
 # read training y
 labels = pd.read_csv('labels.csv').set_index('id')
@@ -55,12 +49,12 @@ y = labels.values
 train_palm_fname = [
     'data/ %d.jpg' % fname for fname in labels.index.tolist()
 ]
-X = np.zeros((len(train_palm_fname), img_width, img_height, 3))
+X = np.zeros((len(train_palm_fname), IMG_WIDTH, IMG_HEIGHT, 3))
 for idx, fname in enumerate(train_palm_fname):
     X[idx, :, :, :] = np.array(
-        Image.open(fname).resize((img_width, img_height)).getdata(),
+        Image.open(fname).resize((IMG_WIDTH, IMG_HEIGHT)).getdata(),
         np.uint8,
-    ).reshape(img_width, img_height, 3)
+    ).reshape(IMG_WIDTH, IMG_HEIGHT, 3)
 
 # make train test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
@@ -78,4 +72,5 @@ tuned_model.fit_generator(
     nb_val_samples=nb_validation_samples,
 )
 
-save_model(tuned_model, 'palm_model.mdl')
+# save model
+save_model(tuned_model, 'model.mdl')
