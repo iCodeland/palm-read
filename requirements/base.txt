@@ -1,0 +1,19 @@
+# debugging
+ipdb==0.10.3
+
+# web service
+Flask==0.12.2
+gunicorn==19.7.1
+
+# data analysis
+h5py==2.7.0
+numpy==1.13.1
+scipy==0.19.1
+pandas==0.20.3
+scikit-learn==0.18.2
+
+# deep learning
+Keras==2.0.6
+
+# image
+Pillow==4.2.1

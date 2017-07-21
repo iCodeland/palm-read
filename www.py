@@ -24,7 +24,6 @@ def palm_read():
     # gif or picture
     if user_input.startswith('https://scontent.xx.fbcdn.net/v/t34.0-12/'):
         img = Image.open(urllib.request.urlopen(user_input))
-        print(img.format)
         if img.format == 'JPEG':
             model = load_model('model.mdl')
             X = np.array(
