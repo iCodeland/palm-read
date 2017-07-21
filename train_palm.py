@@ -60,16 +60,14 @@ for idx, fname in enumerate(train_palm_fname):
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
 
 # make flow
-train_generator = train_datagen.flow(X_train, y_train, batch_size=batch_size)
-test_generator = test_datagen.flow(X_test, y_test, batch_size=batch_size)
+train_generator = train_datagen.flow(X_train, y_train, **FLOW_PARAMS)
+test_generator = test_datagen.flow(X_test, y_test, **FLOW_PARAMS)
 
 # fine-tune
 tuned_model.fit_generator(
     train_generator,
-    epochs=epochs,
     validation_data=test_generator,
-    samples_per_epoch=nb_train_samples,
-    nb_val_samples=nb_validation_samples,
+    **TUNED_PARAMS,
 )
 
 # save model

@@ -25,11 +25,7 @@ def palm_read():
         img.resize((IMG_WIDTH, IMG_HEIGHT)).getdata(),
         np.uint8,
     ).reshape(1, IMG_WIDTH, IMG_HEIGHT, 3) / 255
-    prediction = model.predict(X)[0]
-    result = [rank(p) for p in prediction]
-    love = result[0]
-    job = result[1]
-    health = result[2]
+    love, job, health = [rank(pred) for pred in model.predict(X)[0]]
     return jsonify({
         "messages": [
             {"text": "愛情: %s" % love},
