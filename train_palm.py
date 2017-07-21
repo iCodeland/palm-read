@@ -10,12 +10,7 @@ from keras.layers import Dropout, Flatten, Dense
 from keras.models import Sequential, Model, save_model
 from keras.preprocessing.image import ImageDataGenerator
 
-# constant
-epochs = 1
-batch_size = 16
-nb_train_samples = 2000
-nb_validation_samples = 800
-img_width, img_height = 512, 512
+from settings import *
 
 # build the VGG16 network
 model = applications.VGG16(
