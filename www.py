@@ -18,18 +18,35 @@ def rank(value):
 
 @app.route('/', methods=['POST'])
 def palm_read():
-    model = load_model('model.mdl')
-    image_url = request.form.get('image')
-    img = Image.open(urllib.request.urlopen(image_url))
-    X = np.array(
-        img.resize((IMG_WIDTH, IMG_HEIGHT)).getdata(),
-        np.uint8,
-    ).reshape(1, IMG_WIDTH, IMG_HEIGHT, 3) / 255
-    love, job, health = [rank(pred) for pred in model.predict(X)[0]]
+
+    user_input = request.form.get('user_input')
+
+    # gif or picture
+    if user_input.startswith('https://scontent.xx.fbcdn.net/v/t34.0-12/'):
+        img = Image.open(urllib.request.urlopen(user_input))
+        print(img.format)
+        if img.format == 'JPEG':
+            model = load_model('model.mdl')
+            X = np.array(
+                img.resize((IMG_WIDTH, IMG_HEIGHT)).getdata(),
+                np.uint8,
+            ).reshape(1, IMG_WIDTH, IMG_HEIGHT, 3) / 255
+            love, job, health = [rank(pred) for pred in model.predict(X)[0]]
+            return jsonify({
+                'messages': [
+                    {'text': '愛情: %s' % love},
+                    {'text': '成就: %s' % job},
+                    {'text': '健康: %s' % health},
+                ]
+            })
+        return jsonify({
+            'messages': [
+                {'text': '照片檔案格式不支援，請使用 JPEG'},
+            ]
+        })
+
     return jsonify({
-        "messages": [
-            {"text": "愛情: %s" % love},
-            {"text": "成就: %s" % job},
-            {"text": "健康: %s" % health},
+        'messages': [
+            {'text': '請拍手掌照片'},
         ]
     })

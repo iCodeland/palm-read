@@ -1,4 +1,4 @@
-IMG_WIDTH, IMG_HEIGHT = 512, 512
+IMG_WIDTH, IMG_HEIGHT = 256, 256
 
 FLOW_PARAMS = {
     'batch_size': 16,
@@ -6,8 +6,8 @@ FLOW_PARAMS = {
 
 TUNED_PARAMS = {
     'epochs': 10,
-    'steps_per_epoch': 1000,
-    'validation_steps': 100,
+    'steps_per_epoch': 100,
+    'validation_steps': 80,
 }
 
 IMG_AUG = {
