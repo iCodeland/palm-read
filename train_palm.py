@@ -1,10 +1,9 @@
-import os
-import glob
-
 import numpy as np
 import pandas as pd
 
 from PIL import Image
+
+from sklearn import train_test_split
 
 from keras import applications, optimizers
 from keras.layers import Dropout, Flatten, Dense
@@ -18,79 +17,69 @@ nb_train_samples = 2000
 nb_validation_samples = 800
 img_width, img_height = 512, 512
 
-# read labels
-labels = pd.read_csv('labels.csv').set_index('id')
-all_palm_img_fname = [
-    'data/ %d.jpg' % fname for fname in labels.index.tolist()
-]
-y = labels.values
-data = np.zeros((len(all_palm_img_fname), img_width, img_height, 3))
-
-for idx, fname in enumerate(all_palm_img_fname):
-    data[idx, :, :, :] = np.array(
-        Image.open(fname).resize((img_width, img_height)).getdata(),
-        np.uint8,
-    ).reshape(img_width, img_height, 3)
-
 # build the VGG16 network
 model = applications.VGG16(
     weights='imagenet',
     include_top=False,
     input_shape=(img_width, img_height, 3),
 )
-# import ipdb; ipdb.set_trace()
-print('Model loaded.')
 
+# set the first 10 layers to non-trainable
+for layer in model.layers[:10]:
+    layer.trainable = False
+
+# build custom model
 reg = Flatten()(model.output)
 reg = Dense(1024, activation='relu')(reg)
 reg = Dropout(0.5)(reg)
 reg = Dense(3, activation='linear')(reg)
 
-# set the first 25 layers (up to the last conv block)
-# to non-trainable (weights will not be updated)
-for layer in model.layers[:10]:
-    layer.trainable = False
-
+# combine into tuned model
 tuned_model = Model(input=model.input, output=reg)
-# compile the model with a SGD/momentum optimizer
-# and a very slow learning rate.
 tuned_model.compile(
     loss='mse',
-    optimizer=optimizers.SGD(lr=1e-4, momentum=0.9),
     metrics=['mse'],
+    optimizer=optimizers.Adadelta(lr=0.1),
 )
 
-# prepare data augmentation configuration
+# prepare train data augmentation configuration
+rescale = 1. / 255
+test_datagen = ImageDataGenerator(rescale=rescale)
 train_datagen = ImageDataGenerator(
-    rescale=1. / 255,
+    rescale=rescale,
     # shear_range=0.2,
     # zoom_range=0.2,
     # horizontal_flip=True,
 )
 
-test_datagen = ImageDataGenerator(rescale=1. / 255)
+# read training y
+labels = pd.read_csv('labels.csv').set_index('id')
+y = labels.values
 
-# train_generator = train_datagen.flow_from_directory(
-#     train_data_dir,
-#     target_size=(img_height, img_width),
-#     batch_size=batch_size,
-#     class_mode='binary')
-train_generator = train_datagen.flow(data, y)
+# read training X
+train_palm_fname = [
+    'data/ %d.jpg' % fname for fname in labels.index.tolist()
+]
+X = np.zeros((len(train_palm_fname), img_width, img_height, 3))
+for idx, fname in enumerate(train_palm_fname):
+    X[idx, :, :, :] = np.array(
+        Image.open(fname).resize((img_width, img_height)).getdata(),
+        np.uint8,
+    ).reshape(img_width, img_height, 3)
 
-# validation_generator = test_datagen.flow(validate_data, validate_y)
+# make train test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
 
-# validation_generator = test_datagen.flow_from_directory(
-#     validation_data_dir,
-#     target_size=(img_height, img_width),
-#     batch_size=batch_size,
-#     class_mode='binary')
+# make flow
+train_generator = train_datagen.flow(X_train, y_train, batch_size=batch_size)
+test_generator = test_datagen.flow(X_test, y_test, batch_size=batch_size)
 
-# fine-tune the tuned_model
+# fine-tune
 tuned_model.fit_generator(
     train_generator,
-    samples_per_epoch=nb_train_samples,
     epochs=epochs,
-    # validation_data=validation_generator,
+    validation_data=test_generator,
+    samples_per_epoch=nb_train_samples,
     nb_val_samples=nb_validation_samples,
 )
 
