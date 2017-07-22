@@ -31,10 +31,10 @@ def palm_read():
                 img.resize((IMG_WIDTH, IMG_HEIGHT)).getdata(),
                 np.uint8,
             ).reshape(1, IMG_WIDTH, IMG_HEIGHT, 3) / 255
-            love, job, health = [rank(pred) for pred in model.predict(X)[0]]
+            ranking = tuple([rank(pred) for pred in model.predict(X)[0]])
             return jsonify({
                 'messages': [
-                    {'text': '您的手相算命結果為:\n愛情: %s\n成就: %s\n健康: %s'}
+                    {'text': '您的手相算命結果為:\n愛情: %s\n成就: %s\n健康: %s' % ranking}
                 ]
             })
         except Exception as e:
