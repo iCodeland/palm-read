@@ -1,3 +1,4 @@
+import traceback
 import numpy as np
 from PIL import Image
 import urllib.request
@@ -13,7 +14,7 @@ def rank(value):
     value = int(value)
     if value < 1 or value > 5:
         return '無法判斷'
-    return '%d / 5' % value
+    return '  '.join(['\u2b50' for _ in range(value)])
 
 
 @app.route('/', methods=['POST'])
@@ -22,9 +23,9 @@ def palm_read():
     user_input = request.form.get('user_input')
 
     # gif or picture
-    if user_input.startswith('https://scontent.xx.fbcdn.net/v/t34.0-12/'):
-        img = Image.open(urllib.request.urlopen(user_input))
-        if img.format == 'JPEG':
+    if user_input.startswith('https://scontent.xx.fbcdn.net/'):
+        try:
+            img = Image.open(urllib.request.urlopen(user_input))
             model = load_model('model.mdl')
             X = np.array(
                 img.resize((IMG_WIDTH, IMG_HEIGHT)).getdata(),
@@ -33,19 +34,15 @@ def palm_read():
             love, job, health = [rank(pred) for pred in model.predict(X)[0]]
             return jsonify({
                 'messages': [
-                    {'text': '愛情: %s' % love},
-                    {'text': '成就: %s' % job},
-                    {'text': '健康: %s' % health},
+                    {'text': '您的手相算命結果為:\n愛情: %s\n成就: %s\n健康: %s'}
                 ]
             })
-        return jsonify({
-            'messages': [
-                {'text': '照片檔案格式不支援，請使用 JPEG'},
-            ]
-        })
+        except Exception as e:
+            with open('error.log', 'a') as f:
+                f.write(traceback.format_exc())
 
     return jsonify({
         'messages': [
-            {'text': '請拍手掌照片'},
+            {'text': 'Handbot無法辨識您的手相，請重新拍攝。'},
         ]
     })
