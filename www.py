@@ -27,10 +27,7 @@ def palm_read():
             prediction = model.predict(X)[0]
             return jsonify({
                 'messages': [
-                    {'text': '您的手相算命結果為:\n愛情: %s\n成就: %s\n健康: %s' % tuple(
-                        get_rankings(prediction)
-                    )},
-                    {'text': get_comments(prediction)}
+                    {'text': get_result(prediction)},
                 ]
             })
         except Exception as e:
@@ -44,17 +41,8 @@ def palm_read():
     })
 
 
-def get_rankings(values):
-    rankings = []
-    for i, value in enumerate(values):
-        value = int(value)
-        if value < 1 or value > 5:
-            rankings.append('無法判斷')
-        rankings.append('  '.join(['\u2b50' for _ in range(value)]))
-    return rankings
-
-
-def get_comments(values):
+def get_result(values):
+    _category = ['愛情', '成就', '健康']
     _comments = [
         [
             [
@@ -142,17 +130,18 @@ def get_comments(values):
             ],
         ],
     ]
-    comments = []
+    result = []
     for i, value in enumerate(values):
         value = int(value)
-        try:
+        res = _category[i] + ': '
+        if value < 1 or value > 5:
+            res += '無法判斷\n'
+        else:
+            ranking = '  '.join(['\u2b50' for _ in range(value)])
             comment = np.random.choice(_comments[i][value - 1])
-        except:
-            comment = None
-        if comment:
-            comments.append(comment)
-    if len(comments):
-        comments = '\n'.join(comments)
-    else:
-        comments = '無法評論'
-    return comments
+            res += '%s\n%s\n' % (ranking, comment)
+        result.append(res)
+
+    result = '\n'.join(result)
+
+    return result
